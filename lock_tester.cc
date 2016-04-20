@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include "lang/verify.h"
 

@@ -1,4 +1,5 @@
 #include "rpc.h"
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,6 +35,8 @@ main(int argc, char *argv[])
   lock_server ls;
   rpcs server(atoi(argv[1]), count);
   server.reg(lock_protocol::stat, &ls, &lock_server::stat);
+  server.reg(lock_protocol::acquire, &ls, &lock_server::acquire);
+  server.reg(lock_protocol::release, &ls, &lock_server::release);
 #endif
 
 
