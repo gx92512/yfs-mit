@@ -656,7 +656,8 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 		unsigned int xid_rep, char **b, int *sz)
 {
 	ScopedLock rwl(&reply_window_m_);
-
+    if (!reply_window_[clt_nonce].empty() && reply_window_[clt_nonce].front().xid > xid)
+        return FORGOTTEN;
     std::list<reply_t>::iterator it = reply_window_[clt_nonce].begin();
     while(it != reply_window_[clt_nonce].end())
     {
@@ -677,8 +678,6 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
             else
                 return INPROGRESS;
         }
-        if (reply_window_[clt_nonce].front().xid > xid)
-            return FORGOTTEN;
         ++it;
     }
 
