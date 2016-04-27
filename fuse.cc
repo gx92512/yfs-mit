@@ -220,7 +220,16 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   e->entry_timeout = 0.0;
   e->generation = 0;
   // You fill this in for Lab 2
-  return yfs_client::NOENT;
+  yfs_client::inum num;
+  int r = yfs_client::create(parent, name, num);
+  if (r == yfs_client::OK)
+  {
+      e -> ino = num;
+      getattr(num, e -> attr); 
+  }
+  return r;
+  
+  //return yfs_client::NOENT;
 }
 
 void

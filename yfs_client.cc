@@ -90,4 +90,34 @@ yfs_client::getdir(inum inum, dirinfo &din)
 }
 
 
-
+int
+yfs_client::create(inum parent, const char *name, inum &num)
+{
+    int r = OK
+    std::string pdata;
+    if (ec -> get(parent, pdata) != extent_protocol::OK)
+    {
+        r = IOERR;
+        return r;
+    }
+    std::string sname = string(name);
+    if (pdata.find("/"+sname+"/") != std::string::npos)
+    {
+        r = EXIST;
+        return r;
+    }
+    num =(inum) ((rand() & 0xffffffff) | 0x80000000);
+    pdata += "/" + sname + "/" + filename(num) + "/";
+    std::string emdata;
+    if (ec -> put(num, emdata) != extent_protocol::OK)
+    {
+        r = IOERR;
+        return r;
+    }
+    if (ec -> put(parent, pdata) != extent_protocol::OK)
+    {
+        r = IOERR;
+        return r;
+    }
+    return r;
+}
