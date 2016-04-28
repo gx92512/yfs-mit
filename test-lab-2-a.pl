@@ -33,7 +33,6 @@ for(my $iters = 0; $iters < 100; $iters++){
         createone();
     }
 }
-
 dircheck();
 printf "Passed all tests!\n";
 exit(0);

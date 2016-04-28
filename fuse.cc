@@ -221,7 +221,7 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   e->generation = 0;
   // You fill this in for Lab 2
   yfs_client::inum num;
-  int r = yfs_client::create(parent, name, num);
+  int r = yfs -> create(parent, name, num);
   if (r == yfs_client::OK)
   {
       e -> ino = num;
@@ -279,14 +279,18 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   e.generation = 0;
   bool found = false;
 
+  yfs_client::inum num  = 0;
+  found  = yfs -> lookup(parent, name, num);
   // You fill this in for Lab 2
   if (found)
+  {
+    getattr(num, e.attr);
+    e.ino = num;
     fuse_reply_entry(req, &e);
+  }
   else
     fuse_reply_err(req, ENOENT);
 }
-
-
 struct dirbuf {
     char *p;
     size_t size;
@@ -339,6 +343,17 @@ fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 
   memset(&b, 0, sizeof(b));
 
+  std::list<yfs_client::dirent> c;
+  if(yfs -> readdir(ino, c) != yfs_client::OK)
+  {
+      fuse_reply_err(req, ENOENT);
+      return;
+  }
+
+  for (std::list<yfs_client::dirent>::iterator it = c.begin(); it != c.end(); ++it)
+  {
+      dirbuf_add(&b, (it -> name).c_str(), it -> inum);
+  }
 
   // You fill this in for Lab 2
 

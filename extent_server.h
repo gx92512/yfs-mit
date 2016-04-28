@@ -24,7 +24,7 @@ class extent_server {
   int remove(extent_protocol::extentid_t id, int &);
  private:
   pthread_mutex_t mutex;
-  std::map<extend_protocol::extendid_t, file_cont> file_map;
+  std::map<extent_protocol::extentid_t, file_cont> file_map;
 };
 
 #endif 

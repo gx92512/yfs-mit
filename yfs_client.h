@@ -41,9 +41,13 @@ class yfs_client {
   bool isfile(inum);
   bool isdir(inum);
 
+  //inum random_inum(bool);
   int getfile(inum, fileinfo &);
   int getdir(inum, dirinfo &);
   int create(inum parent, const char *name, inum &inum);
+  bool lookup(inum parent, const char* name, inum &num);
+  //int lookup(inum, const char *, inum &, bool *);
+  int readdir(inum parent, std::list<dirent> &c);
 };
 
 #endif 
