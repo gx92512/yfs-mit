@@ -126,9 +126,21 @@ fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     printf("   fuseserver_setattr set size to %zu\n", attr->st_size);
     struct stat st;
     // You fill this in for Lab 2
-#if 0
+#if 1
     // Change the above line to "#if 1", and your code goes here
     // Note: fill st using getattr before fuse_reply_attr
+    yfs_client::status ret = yfs -> setattr(ino,  attr);
+    if (ret != yfs_client::OK)
+    {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+    ret = getattr(ino, st);
+    if(ret != yfs_client::OK)
+    {
+      fuse_reply_err(req, ENOENT);
+      return;
+    }
     fuse_reply_attr(req, &st, 0);
 #else
     fuse_reply_err(req, ENOSYS);
@@ -155,9 +167,15 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
                 off_t off, struct fuse_file_info *fi)
 {
   // You fill this in for Lab 2
-#if 0
+#if 1
   std::string buf;
   // Change the above "#if 0" to "#if 1", and your code goes here
+  yfs_client::status ret = yfs -> read(ino, off, size, buf);
+  if (ret != yfs_client::OK)
+  {
+    fuse_reply_err(req, ENOENT);
+    return;
+  }
   fuse_reply_buf(req, buf.data(), buf.size());
 #else
   fuse_reply_err(req, ENOSYS);
@@ -185,8 +203,14 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
                  struct fuse_file_info *fi)
 {
   // You fill this in for Lab 2
-#if 0
+#if 1
   // Change the above line to "#if 1", and your code goes here
+  yfs_client::status ret = yfs -> write(ino, off, size, buf);
+  if (ret != yfs_client::OK)
+  {
+    fuse_reply_err(req, ENOENT);
+    return;
+  } 
   fuse_reply_write(req, size);
 #else
   fuse_reply_err(req, ENOSYS);

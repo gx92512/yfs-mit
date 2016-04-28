@@ -161,3 +161,42 @@ yfs_client::readdir(inum parent, std::list<dirent> &c)
     }
     return OK;
 }
+
+int 
+yfs_client::setattr(inum ino, struct stat *attr)
+{
+    std::string pdata;
+    if (ec -> get(ino, pdata) != extent_protocol::OK)
+        return IOERR;
+    pdata.resize(attr -> st_size, '\0');
+    if (ec -> put(ino, pdata) != extent_protocol::OK)
+        return IOERR;
+    return OK;
+}
+
+int 
+yfs_client::read(inum ino, off_t off, size_t size, std::string &buf)
+{
+    std::string pdata;
+    if (ec -> get(ino, pdata) != extent_protocol::OK)
+        return IOERR;
+    if (pdata.length() <= off)
+        return OK;
+    buf = pdata.substr(off, size);
+    return OK;
+}
+
+int 
+yfs_client::write(inum ino, off_t off, size_t size, const char* buf)
+{
+    std::string pdata;
+    if (ec -> get(ino, pdata) != extent_protocol::OK)
+        return IOERR;
+    if (pdata.length() < off + size)
+        pdata.resize(off + size, '\0');
+    for (int i = 0; i < size; ++i)
+        pdata[off + i] = buf[i];
+    if (ec -> put(ino, pdata) != extent_protocol::OK)
+        return IOERR;
+    return OK;
+}
