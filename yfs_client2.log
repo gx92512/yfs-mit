@@ -1,0 +1,24 @@
+FUSE library version: 2.9.2
+unique: 1, opcode: INIT (26), nodeid: 0, insize: 56, pid: 0
+INIT: 7.23
+flags=0x0003f7fb
+max_readahead=0x00020000
+   INIT: 7.19
+   flags=0x00000000
+   max_readahead=0x00020000
+   max_write=0x00020000
+   max_background=0
+   congestion_threshold=0
+   unique: 1, success, outsize: 40
+unique: 2, opcode: GETATTR (3), nodeid: 1, insize: 56, pid: 10359
+getattr 0000000000000001 0
+getdir 0000000000000001
+   getattr -> 1461834452 1461834452 1461834452
+   unique: 2, success, outsize: 120
+unique: 3, opcode: GETXATTR (22), nodeid: 1, insize: 65, pid: 10359
+   unique: 3, error: -38 (Function not implemented), outsize: 16
+unique: 4, opcode: GETATTR (3), nodeid: 1, insize: 56, pid: 10375
+getattr 0000000000000001 0
+getdir 0000000000000001
+   getattr -> 1461834452 1461834452 1461834452
+   unique: 4, success, outsize: 120
