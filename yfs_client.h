@@ -4,11 +4,14 @@
 #include <string>
 //#include "yfs_protocol.h"
 #include "extent_client.h"
+#include "lock_client.h"
+#include "pthread.h"
 #include <vector>
 
 
 class yfs_client {
   extent_client *ec;
+  lock_client *lc;
  public:
 
   typedef unsigned long long inum;
@@ -51,6 +54,22 @@ class yfs_client {
   int write(inum ino, off_t off, size_t size, const char *buf);
   int mkdir(inum parent, const char *name, inum &num);
   int unlink(inum parent, const char *name);
+};
+
+class MutexLockGuard
+{
+private:
+    lock_client *_lc;
+    lock_protocol::lockid_t _lid;
+public:
+    MutexLockGuard(lock_client *lc, lock_protocol::lockid_t lid): _lc(lc), _lid(lid)
+    {
+        _lc -> acquire(_lid);
+    }
+    ~MutexLockGuard()
+    {
+        _lc -> release(_lid);
+    }
 };
 
 #endif 

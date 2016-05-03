@@ -14,7 +14,7 @@
 yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
   ec = new extent_client(extent_dst);
-
+  lc = new lock_client(lock_dst);
 }
 
 yfs_client::inum
@@ -93,6 +93,7 @@ yfs_client::getdir(inum inum, dirinfo &din)
 int
 yfs_client::create(inum parent, const char *name, inum &num)
 {
+    MutexLockGuard mlg(lc, parent);
     int r = OK;
     std::string pdata;
     if (ec -> get(parent, pdata) != extent_protocol::OK)
@@ -125,6 +126,7 @@ yfs_client::create(inum parent, const char *name, inum &num)
 int 
 yfs_client::mkdir(inum parent, const char *name, inum &num)
 {
+    MutexLockGuard mlg(lc, parent);
     std::string pdata;
     if (ec -> get(parent, pdata) != extent_protocol::OK)
         return IOERR;
@@ -144,6 +146,7 @@ yfs_client::mkdir(inum parent, const char *name, inum &num)
 int 
 yfs_client::unlink(inum parent, const char *name)
 {
+    MutexLockGuard mlg(lc, parent);
     std::string pdata;
     if (ec -> get(parent, pdata) != extent_protocol::OK)
         return IOERR;
@@ -155,12 +158,10 @@ yfs_client::unlink(inum parent, const char *name)
     inum num = n2i(pdata.substr(pos + sname.length(), pos2 - pos - sname.length()).c_str());
     if (!isfile(num))
         return EXIST;
-    printf("pdata1 %s %d %d %d\n", pdata.c_str(), pos, pos2, pdata.length());
     if (pos2 == pdata.length() - 1)
         pdata = pdata.substr(0, pos);
     else
         pdata = pdata.substr(0, pos) + pdata.substr(pos2+1, pdata.length());
-    printf("pdata1 %s\n", pdata.c_str());
     if (ec -> put(parent, pdata) != extent_protocol::OK)
         return IOERR;
     if (ec -> remove(num) != extent_protocol::OK)
@@ -210,6 +211,7 @@ yfs_client::readdir(inum parent, std::list<dirent> &c)
 int 
 yfs_client::setattr(inum ino, struct stat *attr)
 {
+    MutexLockGuard mlg(lc, ino);
     std::string pdata;
     if (ec -> get(ino, pdata) != extent_protocol::OK)
         return IOERR;
@@ -234,6 +236,7 @@ yfs_client::read(inum ino, off_t off, size_t size, std::string &buf)
 int 
 yfs_client::write(inum ino, off_t off, size_t size, const char* buf)
 {
+    MutexLockGuard mlg(lc, ino);
     std::string pdata;
     if (ec -> get(ino, pdata) != extent_protocol::OK)
         return IOERR;
