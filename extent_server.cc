@@ -86,6 +86,6 @@ int extent_server::remove(extent_protocol::extentid_t id, int &)
   }
   file_map.erase(it);
   pthread_mutex_unlock(&mutex);
-  return extent_protocol::IOERR;
+  return extent_protocol::OK;
 }
 

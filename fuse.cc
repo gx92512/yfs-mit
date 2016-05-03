@@ -417,11 +417,32 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
   (void) e;
 
   // You fill this in for Lab 3
+  yfs_client::inum num;
+  int stat = yfs -> mkdir(parent, name, num);
+  if (stat == yfs_client::OK)
+  {
+      e.ino = num;
+      getattr(num, e.attr);
+      fuse_reply_entry(req, &e);
+  }
+  else
+  {
+      if (stat == yfs_client::EXIST) 
+      {
+		  fuse_reply_err(req, EEXIST);
+	  }
+      else
+      {
+		  fuse_reply_err(req, ENOENT);
+	  }
+  }
+/*
 #if 0
   fuse_reply_entry(req, &e);
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
+*/
 }
 
 //
@@ -438,7 +459,12 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // You fill this in for Lab 3
   // Success:	fuse_reply_err(req, 0);
   // Not found:	fuse_reply_err(req, ENOENT);
-  fuse_reply_err(req, ENOSYS);
+  int stat = yfs -> unlink(parent, name);
+  if (stat == yfs_client::OK)
+      fuse_reply_err(req, 0);
+  else
+      fuse_reply_err(req, ENOENT);
+  //fuse_reply_err(req, ENOSYS);
 }
 
 void

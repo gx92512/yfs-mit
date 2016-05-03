@@ -108,7 +108,6 @@ yfs_client::create(inum parent, const char *name, inum &num)
     }
     num =(inum) ((rand() & 0xffffffff) | 0x80000000);
     pdata += "/" + sname + "/" + filename(num) + "/";
-    printf("pdata %s\n", pdata.c_str());
     std::string emdata;
     if (ec -> put(num, emdata) != extent_protocol::OK)
     {
@@ -121,6 +120,52 @@ yfs_client::create(inum parent, const char *name, inum &num)
         return r;
     }
     return r;
+}
+
+int 
+yfs_client::mkdir(inum parent, const char *name, inum &num)
+{
+    std::string pdata;
+    if (ec -> get(parent, pdata) != extent_protocol::OK)
+        return IOERR;
+    std::string sname = std::string(name);
+    if (pdata.find("/"+sname+"/") != std::string::npos)
+        return EXIST;
+    num = (inum) (rand() & 0x7fffffff);
+    pdata += "/" + sname + "/" + filename(num) + "/";
+    std::string emdata;
+    if (ec -> put(num, emdata) != extent_protocol::OK)
+        return IOERR;
+    if (ec -> put(parent, pdata) != extent_protocol::OK)
+        return IOERR;
+    return OK;
+}
+
+int 
+yfs_client::unlink(inum parent, const char *name)
+{
+    std::string pdata;
+    if (ec -> get(parent, pdata) != extent_protocol::OK)
+        return IOERR;
+    std::string sname = "/" + std::string(name) + "/";
+    size_t pos = pdata.find(sname);
+    if (pos == std::string::npos)
+        return EXIST;
+    size_t pos2 = pdata.find("/", pos + sname.length());
+    inum num = n2i(pdata.substr(pos + sname.length(), pos2 - pos - sname.length()).c_str());
+    if (!isfile(num))
+        return EXIST;
+    printf("pdata1 %s %d %d %d\n", pdata.c_str(), pos, pos2, pdata.length());
+    if (pos2 == pdata.length() - 1)
+        pdata = pdata.substr(0, pos);
+    else
+        pdata = pdata.substr(0, pos) + pdata.substr(pos2+1, pdata.length());
+    printf("pdata1 %s\n", pdata.c_str());
+    if (ec -> put(parent, pdata) != extent_protocol::OK)
+        return IOERR;
+    if (ec -> remove(num) != extent_protocol::OK)
+        return IOERR;
+    return OK;
 }
 
 bool
@@ -194,7 +239,7 @@ yfs_client::write(inum ino, off_t off, size_t size, const char* buf)
         return IOERR;
     if (pdata.length() < off + size)
         pdata.resize(off + size, '\0');
-    for (int i = 0; i < size; ++i)
+    for (size_t i = 0; i < size; ++i)
         pdata[off + i] = buf[i];
     if (ec -> put(ino, pdata) != extent_protocol::OK)
         return IOERR;
