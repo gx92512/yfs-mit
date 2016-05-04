@@ -20,11 +20,32 @@ class lock_release_user {
 };
 
 class lock_client_cache : public lock_client {
+  enum lock_stat{ NONE, FREE, LOCKED, ACQUIRING, RELEASING};
+  struct cached_lock
+  {
+      cached_lock()
+      {
+          stat = NONE;
+          retry = false;
+          revoke = false;
+          retry_con = PTHREAD_COND_INITIALIZER;
+          wait_con = PTHREAD_COND_INITIALIZER;
+          release_con = PTHREAD_COND_INITIALIZER;
+      }
+      bool retry;
+      bool revoke;
+      lock_stat stat;
+      pthread_cond_t retry_con;
+      pthread_cond_t wait_con;
+      pthread_cond_t release_con;
+  };
  private:
   class lock_release_user *lu;
   int rlock_port;
   std::string hostname;
   std::string id;
+  pthread_mutex_t mutex;
+  std::map<lock_protocol::lockid_t, cached_lock> lock_pool;
  public:
   lock_client_cache(std::string xdst, class lock_release_user *l = 0);
   virtual ~lock_client_cache() {};
