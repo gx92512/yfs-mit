@@ -106,6 +106,7 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
       pthread_mutex_lock(&mutex);
       it -> second.stat = NONE;
       pthread_cond_broadcast(&it->second.release_con);
+      pthread_cond_signal(&(it -> second).wait_con);
       pthread_mutex_unlock(&mutex);
       return lock_protocol::OK;
   }
@@ -121,7 +122,7 @@ lock_client_cache::revoke_handler(lock_protocol::lockid_t lid,
   int r;
   pthread_mutex_lock(&mutex);
   std::map<lock_protocol::lockid_t, cached_lock>::iterator
-      it = lock_pool.find(lid)
+      it = lock_pool.find(lid);
   //printf("revoke handler %s %d\n", id.c_str(), it -> second.stat);
   if (it -> second.stat == FREE)
   {

@@ -26,36 +26,53 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
       it = lock_pool.find(lid);
   if (it == lock_pool.end())
       it = (lock_pool.insert(std::make_pair(lid, lock_cached())).first);
-  printf("%s %d %d\n", id.c_str(), lid, it->second.stat);
-  printf("waiters size %d\n", it -> second.waiters.size());
+  //printf("%s %d %d\n", id.c_str(), lid, it->second.stat);
+  //printf("waiters size %d\n", it -> second.waiters.size());
   if (it->second.stat == FREE)
   {
       it -> second.user = id;
       it -> second.stat = LOCKED;
-      if (it -> second.waiters.size() == 1)
-        should_revoke = true;
   }
   else if (it -> second.stat == LOCKED)
   {
-      //it -> second.stat = WAITED;
-      it -> second.waiters.insert(id);
+      it -> second.stat = WAITED;
+      it -> second.waiters.push_back(id);
       ret = lock_protocol::RETRY;
-      printf("waiters size %d\n", it -> second.waiters.size());
-      if (it -> second.waiters.size() == 1)
-        should_revoke = true;
+      //printf("waiters size %d\n", it -> second.waiters.size());
+      should_revoke = true;
   }
-  /*
   else if (it -> second.stat == WAITED)
   {
-      it -> second.waiters.insert(id);
+      it -> second.waiters.push_back(id);
       ret = lock_protocol::RETRY;
   }
-  */
+  else if (it -> second.stat == RETRY)
+  {
+      std::string needid = it -> second.waiters.front();
+      if (id == needid)
+      {
+          it -> second.waiters.pop_front();
+          it -> second.user = id;
+          ret = lock_protocol::OK;
+          if (it -> second.waiters.size())
+          {
+              it -> second.stat = WAITED;
+              should_revoke = true;
+          }
+          else
+              it -> second.stat = LOCKED;
+      }
+      else
+      {
+          it -> second.waiters.push_back(id);
+          ret = lock_protocol::RETRY;
+      }
+  }
   pthread_mutex_unlock(&mutex);
   if (should_revoke)
   {
       int r;
-      printf("revoke %s %d\n", it->second.user.c_str(), lid);
+      //printf("revoke %s %d\n", it->second.user.c_str(), lid);
       handle(it->second.user).safebind()->call(rlock_protocol::revoke, lid, r);
   }
   return ret;
@@ -71,6 +88,32 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
   std::map<lock_protocol::lockid_t, lock_cached>::iterator 
       it = lock_pool.find(lid);
   //printf("release called %s, %d, %d\n", id.c_str(), lid, it -> second.stat);
+
+  if (it == lock_pool.end())
+      ret = lock_protocol::NOENT;
+  if (it -> second.stat == FREE)
+      ret = lock_protocol::IOERR;
+  else if (it -> second.stat == LOCKED)
+  {
+      it -> second.stat = FREE;
+      ret = lock_protocol::OK;
+  }
+  else if (it -> second.stat == WAITED)
+  {
+      client_id = it -> second.waiters.front();
+      it -> second.stat = RETRY;
+      pthread_mutex_unlock(&mutex);
+      handle(client_id).safebind()->call(rlock_protocol::retry, lid, r);
+      pthread_mutex_lock(&mutex);
+      ret = lock_protocol::OK;
+  }
+  else
+  {
+      ret = lock_protocol::IOERR;
+  }
+  pthread_mutex_unlock(&mutex);
+  return ret;
+  /*
   if (it -> second.waiters.size() == 0)
       it -> second.stat = FREE;
   else //if (it -> second.stat == WAITED)
@@ -94,6 +137,7 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
   }
   pthread_mutex_unlock(&mutex);
   return ret;
+  */
 }
 
 lock_protocol::status

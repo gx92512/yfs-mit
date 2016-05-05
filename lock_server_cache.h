@@ -4,7 +4,7 @@
 #include <string>
 
 #include <map>
-#include <set>
+#include <deque>
 #include "lock_protocol.h"
 #include "rpc.h"
 #include "lock_server.h"
@@ -20,7 +20,7 @@ class lock_server_cache {
       }
       status stat;
       std::string user;
-      std::set<std::string> waiters;
+      std::deque<std::string> waiters;
   };
  private:
   int nacquire;
