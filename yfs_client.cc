@@ -14,7 +14,9 @@
 yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
   ec = new extent_client(extent_dst);
-  lc = new lock_client_cache(lock_dst);
+  //lc = new lock_client_cache(lock_dst);
+  lock_release_user *lru = new lock_user(ec);
+  lc = new lock_client_cache(lock_dst, lru);
 }
 
 yfs_client::inum
@@ -55,6 +57,7 @@ yfs_client::getfile(inum inum, fileinfo &fin)
 
   printf("getfile %016llx\n", inum);
   extent_protocol::attr a;
+  MutexLockGuard mlg(lc, inum);
   if (ec->getattr(inum, a) != extent_protocol::OK) {
     r = IOERR;
     goto release;
@@ -78,6 +81,7 @@ yfs_client::getdir(inum inum, dirinfo &din)
 
   printf("getdir %016llx\n", inum);
   extent_protocol::attr a;
+  MutexLockGuard mlg(lc, inum);
   if (ec->getattr(inum, a) != extent_protocol::OK) {
     r = IOERR;
     goto release;
@@ -110,6 +114,7 @@ yfs_client::create(inum parent, const char *name, inum &num)
     num =(inum) ((rand() & 0xffffffff) | 0x80000000);
     pdata += "/" + sname + "/" + filename(num) + "/";
     std::string emdata;
+    //MutexLockGuard mlg2(lc, num);
     if (ec -> put(num, emdata) != extent_protocol::OK)
     {
         r = IOERR;
@@ -136,6 +141,7 @@ yfs_client::mkdir(inum parent, const char *name, inum &num)
     num = (inum) (rand() & 0x7fffffff);
     pdata += "/" + sname + "/" + filename(num) + "/";
     std::string emdata;
+    //MutexLockGuard mlg2(lc, num);
     if (ec -> put(num, emdata) != extent_protocol::OK)
         return IOERR;
     if (ec -> put(parent, pdata) != extent_protocol::OK)
@@ -164,6 +170,7 @@ yfs_client::unlink(inum parent, const char *name)
         pdata = pdata.substr(0, pos) + pdata.substr(pos2+1, pdata.length());
     if (ec -> put(parent, pdata) != extent_protocol::OK)
         return IOERR;
+    //MutexLockGuard mlg2(lc, num);
     if (ec -> remove(num) != extent_protocol::OK)
         return IOERR;
     return OK;
@@ -173,6 +180,7 @@ bool
 yfs_client::lookup(inum parent, const char* name, inum &num)
 {
     std::string pdata;
+    MutexLockGuard mlg(lc, parent);
     if (ec -> get(parent, pdata) != extent_protocol::OK)
         return false;
     std::string sname = "/" + std::string(name) + "/";
@@ -188,6 +196,7 @@ int
 yfs_client::readdir(inum parent, std::list<dirent> &c)
 {
     std::string pdata;
+    MutexLockGuard mlg(lc, parent);
     if (ec -> get(parent, pdata) != extent_protocol::OK)
         return IOERR;
     size_t pos1  = 0, pos2 = 0;
@@ -225,6 +234,7 @@ int
 yfs_client::read(inum ino, off_t off, size_t size, std::string &buf)
 {
     std::string pdata;
+    MutexLockGuard mlg(lc, ino);
     if (ec -> get(ino, pdata) != extent_protocol::OK)
         return IOERR;
     if (pdata.length() <= off)

@@ -185,4 +185,22 @@ extent_client::remove(extent_protocol::extentid_t eid)
   return ret;
 }
 
-
+extent_protocol::status
+extent_client::flush(extent_protocol::extentid_t eid)
+{
+    extent_protocol::status ret = extent_protocol::OK;
+    int r;
+    pthread_mutex_lock(&mutex);
+    if (cache_pool.find(eid) != cache_pool.end())
+    {
+        if (cache_pool[eid].stat == REMOVED)
+            ret = cl -> call(extent_protocol::remove, eid, r);
+        else if (cache_pool[eid].stat == CHANGED)
+            ret = cl -> call(extent_protocol::put, eid, cache_pool[eid].content, r);
+        cache_pool.erase(eid);
+    }
+    else
+        ret = extent_protocol::NOENT;
+    pthread_mutex_unlock(&mutex);
+    return ret;
+}

@@ -6,6 +6,7 @@
 
 #include <string>
 #include "lock_protocol.h"
+#include "extent_client.h"
 #include "rpc.h"
 #include "lock_client.h"
 #include "lang/verify.h"
@@ -57,5 +58,16 @@ class lock_client_cache : public lock_client {
                                        int &);
 };
 
+class lock_user: public lock_release_user
+{
+    public:
+        lock_user(extent_client *e): ec(e) {}
+        void dorelease(lock_protocol::lockid_t lid)
+        {
+            ec -> flush(lid);
+        }
+    private:
+        extent_client *ec;
+};
 
 #endif
