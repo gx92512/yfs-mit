@@ -37,6 +37,7 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
   while (1)
   {
       //printf("%d %d\n", lid, it -> second.stat);
+      printf("acquire called %d %d\n", it -> second.stat, lid);
       if (it -> second.stat == NONE)
       {
           it -> second.stat = ACQUIRING;
@@ -89,7 +90,7 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
   pthread_mutex_lock(&mutex);
   std::map<lock_protocol::lockid_t, cached_lock>::iterator
       it = lock_pool.find(lid);
-  //printf("release called %s %d %d\n", id.c_str(), lid, it -> second.revoke);
+  printf("release called %s %d %d\n", id.c_str(), lid, it -> second.revoke);
   if (!(it -> second.revoke))
   {
       it -> second.stat = FREE;
