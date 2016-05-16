@@ -31,6 +31,10 @@ main(int argc, char *argv[])
 
   //jsl_set_debug(2);
 
+#define	RSM
+#ifdef RSM
+   rsm rsm(argv[1], argv[2]);
+#endif // RSM
 #ifndef RSM
   lock_server_cache ls;
   rpcs server(atoi(argv[1]), count);
