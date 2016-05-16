@@ -83,6 +83,7 @@
 
 #include "handle.h"
 #include "rsm.h"
+#include "unistd.h"
 #include "tprintf.h"
 #include "lang/verify.h"
 
